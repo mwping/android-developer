@@ -1,4 +1,4 @@
-package com.mwping.android.developer.samples.flow
+package com.mwping.android.developer.samples.kotlin.official.coroutines.flow
 
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.delay
