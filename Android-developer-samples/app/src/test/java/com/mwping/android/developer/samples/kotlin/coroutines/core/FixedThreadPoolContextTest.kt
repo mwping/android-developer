@@ -1,11 +1,12 @@
 package com.mwping.android.developer.samples.kotlin.coroutines.core
 
-import com.mwping.android.developer.samples.utils.Utils
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import org.junit.Test
-import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
@@ -16,23 +17,36 @@ import java.util.concurrent.TimeUnit
 class FixedThreadPoolContextTest {
     @Test
     fun main() {
-        Utils.startMs = System.currentTimeMillis()
         GlobalScope.launch(cacheThreadPoolDispatcher) {
-            Utils.doSomething(1, sleepMs = 0, delayMs = 0)
-            Utils.doSomething(2, sleepMs = 6_000, delayMs = 0)
-            Utils.doSomething(3, sleepMs = 0, delayMs = 6_000)
+            val start = System.currentTimeMillis()
+            val deferreds = (1..20).map {
+                async { doSomethingUseful(it) }
+            }
+            deferreds.forEach {
+                it.await()
+            }
+            val sum = deferreds.awaitAll().sum()
+            println("The answer is $sum")
+            println("Completed in ${System.currentTimeMillis() - start} ms")
         }
-        Thread.sleep(30_000)
+        Thread.sleep(15_000)
+    }
+
+    suspend fun doSomethingUseful(index: Int): Int {
+        println("Start doSomethingUseful: $index(${Thread.currentThread().name})")
+        Thread.sleep(1000L)
+        println("End doSomethingUseful: $index")
+        return index
     }
 
     companion object {
         val cacheThreadPoolDispatcher by lazy {
             ThreadPoolExecutor(
-                0,
-                1,
-                5,
+                3,
+                3,
+                60,
                 TimeUnit.SECONDS,
-                SynchronousQueue()
+                LinkedBlockingQueue()
             ).asCoroutineDispatcher()
         }
     }
