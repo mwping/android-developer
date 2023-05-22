@@ -1,10 +1,12 @@
 package com.mwping.android.developer.samples.kotlin.coroutines.core
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.junit.Test
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
@@ -17,17 +19,16 @@ import java.util.concurrent.TimeUnit
 class FixedThreadPoolContextTest {
     @Test
     fun main() {
-        GlobalScope.launch(cacheThreadPoolDispatcher) {
-            val start = System.currentTimeMillis()
-            val deferreds = (1..20).map {
-                async { doSomethingUseful(it) }
+        GlobalScope.launch(Dispatchers.IO) {
+            withContext(cacheThreadPoolDispatcher) {
+                val start = System.currentTimeMillis()
+                val deferreds = (1..20).map {
+                    async { doSomethingUseful(it) }
+                }
+                val sum = deferreds.awaitAll().sum()
+                println("The answer is $sum")
+                println("Completed in ${System.currentTimeMillis() - start} ms")
             }
-            deferreds.forEach {
-                it.await()
-            }
-            val sum = deferreds.awaitAll().sum()
-            println("The answer is $sum")
-            println("Completed in ${System.currentTimeMillis() - start} ms")
         }
         Thread.sleep(15_000)
     }
